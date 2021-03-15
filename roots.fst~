@@ -1,0 +1,7 @@
+module Roots
+open FStar.Math.Lemmas
+open FStar.List.Tot
+open FStar.List.Tot.Properties
+
+module Map = FStar.Map
+
