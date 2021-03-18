@@ -138,10 +138,29 @@ val pow2_64 : e:nat64{Integers.(e <= 32L)} -> Tot int64
 let pow2_64 e = 
   let ue = UInt.to_uint_t 32 (Int64.v e) in
   Int64.shift_left 1L (UInt32.uint_to_t ue)
+ 
 
-val pow2_correct : e:nat64{Integers.(e <= 32L)} 
-  -> Lemma (requires true) (ensures ((Int64.v (pow2_64 e)) == pow2 (Int64.v e)))
-let pow2_correct = admit()
+val pow2_correct : e:nat64{Integers.(e <= 32L)}  -> Lemma 
+  (ensures ((Int64.v (pow2_64 e)) == pow2 (Int64.v e)))
+  [SMTPat (pow2_64 e)]
+let pow2_correct e = 
+    let e' = (UInt32.uint_to_t (UInt.to_uint_t 32 (Int64.v e))) in
+    Int.shift_left_value_lemma #64 1 (Int64.v e);
+    pow2_le_compat 32 (Int64.v e)
+    // s=(UInt32.uint_to_t (UInt.to_uint_t 32 (Int64.v e)))
+    
+    // Int64.v (Int64.shift_left 1L s)
+    //={Int64.shift_left post condition}
+    // Int.shift_left (Int64.v 1L) (UInt32.v s)
+    //={Int.shift_left_value_lemma}
+    // ((Int64.v 1L) * pow2 (UInt32.v s)) @% pow2 64
+    //={1 ne of *}
+    // pow2 (UInt32.v s) @% pow2 64
+    //={pow2_le_compat...}
+    // pow2 (UInt32.v s)
+    //={conversions}
+    // pow2 (Int64.v e)
+
 
 (*
   Lemma: the size of a tree [t] of height of at most [h] is bound by 2^h.
@@ -391,8 +410,6 @@ and insert_node t1 t2 height posi cms =
   let (t1', t2') =
     let open Integers in
     if posi < pow2_64 height then (
-      // DEPENDS ON THIS ASSUMPTION
-      pow2_correct height;
       let at =  (pow2_64 height) -  posi in
       let (cml, cmr) = split_at at cms in
       let t1' = insert t1 height posi cml in
@@ -409,13 +426,11 @@ and insert_node t1 t2 height posi cms =
       (t1', t2') )
     else 
       (
-      // DEPENDS ON THIS ASSUMPTION
-      pow2_correct height;
       let pos' = ( posi - (pow2_64 height)) in
       let t2' = insert t2 height pos' cms in
       size_full_lemma t1 (Int64.v height);
       (t1, t2') 
       )
   in
-  let h = hashT height t1' t2' in
+  let h = hashT height t1' t2' in 
   Node h t1' t2'
