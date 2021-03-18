@@ -2,9 +2,13 @@ module Trees
 open FStar.List.Tot
 open FStar.List.Tot.Properties
 open FStar.Math.Lemmas
+module Seq = FStar.Seq.Base
 
-type hash = int
-type commitment = int
+assume type byte:eqtype
+assume val hash_size:nat
+
+type hash = b:Seq.seq byte{Seq.length b == hash_size}
+type commitment = hash
 
 (** Incremental Merkle Tree
      *
@@ -346,7 +350,6 @@ and insert_node t1 t2 height pos cms =
       let t2' = insert t2 height 0 cmr in
       list_length_size_lemma t2';
       list_length_size_lemma t2;
-      let h = hashT height t1' t2' in
       size_height_lemma t1' height;
       incremental_lemma3 t1' t2' height; 
       append_assoc (to_list t1) cml cmr;
@@ -356,7 +359,6 @@ and insert_node t1 t2 height pos cms =
       (
       let pos' = ( pos - (pow2 height)) in
       let t2' = insert t2 height pos' cms in
-      let h = hashT height t1 t2' in
       size_full_lemma t1 height;
       (t1, t2') 
       )
